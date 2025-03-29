@@ -7,6 +7,7 @@ import (
     "os"
 
     "github.com/jackc/pgx/v5"
+    "github.com/golang-jwt/jwt/v5"
     _ "github.com/joho/godotenv/autoload"
 )
 
