@@ -1,13 +1,11 @@
 package main
 
 import (
-    //"context"
     "log"
     "net/http"
 
     "ADHD-Skills-Tracker/database"
     "ADHD-Skills-Tracker/routes"
-    //"github.com/gorilla/mux"
 )
 
 func main(){

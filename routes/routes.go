@@ -9,6 +9,7 @@ func CreateRoutes() *mux.Router {
     router := mux.NewRouter()
 
     router.HandleFunc("/users", handlers.CreateUserHandler).Methods("POST")
+    router.HandleFunc("/login", handlers.LoginUserHandler).Methods("POST")
     //router.HandleFunc("/skills", handlers.GetSkillsHandler).Methods("GET")
     //router.HandleFunc("/skills", handlers.CreateSkillHandler).Methods("POST")
     //router.HandleFunc("/skills/{id}", handlers.UpdateSkillHandler).Methods("PUT")
