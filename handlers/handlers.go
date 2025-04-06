@@ -2,7 +2,7 @@ package handlers
 
 import (
     "encoding/json"
-    //"fmt"
+    "fmt"
     "net/http"
     "time"
     "ADHD-Skills-Tracker/models"
@@ -15,6 +15,8 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
    user.ID = uuid.New()
    user.CreatedAt = time.Now()
    user.UpdatedAt = time.Now()
+
+   fmt.Printf("id: %v, email: %v, passwd: %v, created: %v, updated: %v\n",user.ID, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
 
    err := models.CreateUser(&user)
    if err != nil {
