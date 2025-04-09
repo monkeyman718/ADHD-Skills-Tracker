@@ -1,59 +1,39 @@
 package database
 
 import (
-    "context"
     "fmt"
     "log"
     "os"
 
-    "github.com/jackc/pgx/v5/pgxpool"
+    "gorm.io/gorm"
+    "gorm.io/driver/postgres"
     _ "github.com/joho/godotenv/autoload"
 )
 
-var DB *pgxpool.Pool
+var DB *gorm.DB
 
+// ConnectDB connects to the database using GORM
 func ConnectDB() {
     var err error
 
-    databaseUrl := os.Getenv("DATABASE_URL")
-    if databaseUrl == "" {
-        log.Fatal("DATABASE_URL environment variable not found.")
-    }
+    dsn := os.Getenv("DATABASE_URL") // Database connection string
 
-    DB, err = pgxpool.New(context.Background(), databaseUrl)
+    // Open connection to the database
+    DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
     if err != nil {
         log.Fatalf("Unable to connect to database: %v", err)
     }
-    
+
     fmt.Println("Connected to the database!")
 }
 
-/*func ConnectDB() {
-    databaseUrl := os.Getenv("DATABASE_URL")
-    if databaseUrl == "" {
-        log.Fatal("DATABASE_URL environment variable not found.")
-    }
-
-    config, err := pgxpool.ParseConfig(databaseUrl)
-    if err != nil {
-        log.Fatalf("Unable to parse database URL: %v", err)
-    }
-
-    // 🔥 This disables the statement cache to avoid the Supabase error
-    config.ConnConfig.PreferSimpleProtocol = true
-
-    DB, err = pgxpool.NewWithConfig(context.Background(), config)
-    if err != nil {
-        log.Fatalf("Unable to connect to database: %v", err)
-    }
-
-    fmt.Println("Connected to the database!")
-}*/
-
-
+// CloseDB closes the database connection
 func CloseDB() {
-    if DB != nil {
-        DB.Close()
-        fmt.Println("Database connection closed.")
+    db, err := DB.DB()
+    if err != nil {
+        log.Fatalf("Unable to get DB instance: %v", err)
     }
+    db.Close()
+    fmt.Println("Database connection closed.")
 }
+

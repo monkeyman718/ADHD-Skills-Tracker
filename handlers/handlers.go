@@ -53,3 +53,32 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
         "user_id": user.ID.String(),
     })
 }
+
+func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
+    var skill models.Skill
+
+    if err := json.NewDecoder(r.Body).Decode(&skill); err != nil {
+        http.Error(w, fmt.Sprintf("Error parsing request body: %v", err), http.StatusBadRequest)
+        return
+    }
+
+    skill.ID = uuid.New()
+    skill.CreatedAt = time.Now()
+    skill.UpdatedAt = time.Now()
+
+    fmt.Printf("id: %v, user_id: %v, name: %v, priority: %v, goal: %v, status: %v, created: %v, updated: %v\n",
+        skill.ID, skill.UserID, skill.Name, skill.Priority, skill.Goal, skill.Status, skill.CreatedAt, skill.UpdatedAt)
+
+    err := models.CreateSkill(&skill)
+    if err != nil {
+        http.Error(w, fmt.Sprintf("Error creating skill: %v", err), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+
+    if err := json.NewEncoder(w).Encode(skill); err != nil {
+        http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+    }
+}

@@ -67,7 +67,6 @@ func CreateUser(user *User) error {
     user.Password = string(hashedPassword)  // Store the hashed password
 
     queryStr := "INSERT INTO users (id, email, password_hash, created_at, updated_at) VALUES ($1,$2,$3,$4,$5);"
-    log.Printf("Attempting to insert user: id=%v email=%v passwd=%v created=%v updated=%v", user.ID, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
 
     _, err = database.DB.Exec(context.Background(), queryStr, user.ID, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
     if err != nil {
