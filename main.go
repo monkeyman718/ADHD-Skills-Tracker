@@ -56,8 +56,15 @@ func main() {
     router.HandleFunc("/skills", CreateSkillHandler).Methods("POST")
     router.HandleFunc("/login", LoginHandler).Methods("POST")
 
+    port := os.Getenv("PORT")
+    
+    if port == "" {
+        port = "8080" // fallback for local dev
+    }
+
+
     fmt.Println("Listening on port 8080...")
-    log.Fatal(http.ListenAndServe(":8080", router))
+    http.ListenAndServe(":"+port, router)
 }
 
 func ConnectDB() {
