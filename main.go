@@ -19,11 +19,22 @@ import (
 )
 
 type User struct{
-    ID          uuid.UUID   `gorm:"id"`
-    Email       string      `json:"email" gorm:"email"`
-    Password    string      `json:"password" gorm:"column:password_hash"`
+    ID          uuid.UUID   `gorm:"type:uuid;primary key"`
+    Email       string      `json:"email" gorm:"email;not null"`
+    Password    string      `json:"password" gorm:"column:password_hash;not null"`
     CreatedAt   time.Time   `gorm:"created_at"`
     UpdatedAt   time.Time   `gorm:"updated_at"`
+}
+
+type Skill struct {
+    ID          uuid.UUID   `gorm:"type:uuid;primary key"`
+    UserID      uuid.UUID   `json:"user_id" gorm:"type:uuid;not null"`
+    Name        string      `json:"name" gorm:"not null"`
+    Priority    string      `json:"priority" gorm:"priority"`
+    Goal        string      `json:"goal" gorm:"goal"`
+    Status      string      `json:"status" gorm:"status"`
+    CreatedAt   time.Time   `gorm:"created_at"`
+    UpdatedAt   time.Time   `gorm:"updated_at"` 
 }
 
 var DB *gorm.DB
@@ -42,6 +53,8 @@ func main() {
     router.HandleFunc("/users", CreateUserHandler).Methods("POST")
     router.HandleFunc("/users", GetUsersHandler).Methods("GET")
     router.HandleFunc("/users/{email}", GetUserByIdHandler).Methods("GET")
+    router.HandleFunc("/skills", CreateSkillHandler).Methods("POST")
+    router.HandleFunc("/login", LoginHandler).Methods("POST")
 
     fmt.Println("Listening on port 8080...")
     log.Fatal(http.ListenAndServe(":8080", router))
@@ -103,8 +116,69 @@ func GetUserByIdHandler(w http.ResponseWriter, r *http.Request) {
     user := User{}
 
     // search for user info with that id
-    DB.Where("email = ?", email).First(&user)
+    if result := DB.Where("email = ?", email).First(&user); result != nil {
+        http.Error(w,"Error: User not found", http.StatusNotFound)
+        return
+    }    
 
     // return user data as json
     json.NewEncoder(w).Encode(&user)
+}
+
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+    user := User{}
+    dbUser := User{}
+
+    json.NewDecoder(r.Body).Decode(&user)
+
+    // get the password from the database for the email provided
+    if err := DB.Where("email = ?", user.Email).First(&dbUser); err != nil {
+        http.Error(w, "Error: Email not found", http.StatusUnauthorized)
+        return
+    }
+
+    if err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password)); err != nil {
+        http.Error(w, "Error: Invalid email or password", http.StatusUnauthorized)
+        return
+    }
+
+    json.NewEncoder(w).Encode(map[string]string{"message": "Login successful!"})
+}
+
+func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
+    validPriorities := map[string]bool{
+        "High": true,
+        "Medium": true,
+        "Low": true,
+    }
+
+    validStatus := map[string]bool{
+        "Not Started": true,
+        "In Progress": true,
+        "Completed":   true,
+    }
+
+    skill := Skill{}
+    
+
+    json.NewDecoder(r.Body).Decode(&skill)
+    skill.ID = uuid.New()
+    
+    if !validPriorities[skill.Priority] {
+        http.Error(w, "Error: Invalid priority", http.StatusBadRequest)
+        return
+    }
+
+    if !validStatus[skill.Status] {
+        http.Error(w, "Error: Invalid status", http.StatusBadRequest)
+        return
+    }
+    
+    result := DB.Create(&skill)
+    if result.Error != nil {
+        http.Error(w, "Error: Skill not created", http.StatusNotModified)
+        return
+    }
+
+    json.NewEncoder(w).Encode(map[string]string{"message": "New skill created!"})
 }
