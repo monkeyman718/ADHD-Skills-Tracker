@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -63,8 +62,6 @@ func main() {
         port = "8080" // fallback for local dev
     }
 
-
-    fmt.Println("Listening on port 8080...")
     http.ListenAndServe(":"+port, enableCORS(router))
 }
 
@@ -84,9 +81,7 @@ func ConnectDB() {
     DB, err = gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{Logger: logger.Default.LogMode(logger.Info),})
     if err != nil {
         panic("Error: Could not connect to database.")
-    }   
-
-    fmt.Println("Connected to database!")
+    }  
 }
 
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -120,17 +115,13 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
     var users []User
-
-    // store request in []users array
-
-    // get users from database
+	
     result := DB.Find(&users)
     if result.RowsAffected < 1 {
         w.WriteHeader(http.StatusInternalServerError)
         json.NewEncoder(w).Encode(map[string]error{"error": result.Error})
     }
 
-    // return users as json response
     w.Header().Set("Content-Type","application/json")
     json.NewEncoder(w).Encode(&users)
 }
@@ -147,6 +138,7 @@ func GetUserByIdHandler(w http.ResponseWriter, r *http.Request) {
     }    
 
     // return user data as json
+    w.Header().Set("Content-Type","application/json")
     json.NewEncoder(w).Encode(&user)
 }
 
@@ -205,5 +197,6 @@ func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    w.Header().Set("Content-Type","application/json")
     json.NewEncoder(w).Encode(map[string]string{"message": "New skill created!"})
 }
