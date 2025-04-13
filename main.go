@@ -114,6 +114,7 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     // return users as json response
+    w.Header().Set("Content-Type","application/json")
     json.NewEncoder(w).Encode(&users)
 }
 
