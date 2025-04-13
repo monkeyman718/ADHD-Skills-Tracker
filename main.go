@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	//"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
+
+	//"github.com/joho/godotenv"
 	_ "github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
@@ -40,11 +41,11 @@ type Skill struct {
 var DB *gorm.DB
 var err error
 
-func init() {
+/*func init() {
     if err := godotenv.Load(); err != nil {
         log.Println("No .env file found")
     }
-}
+}*/
 
 func main() {
     ConnectDB()
