@@ -20,6 +20,7 @@ import (
 
 type User struct{
     ID          uuid.UUID   `gorm:"type:uuid;primary key"`
+    Username    string      `json:"username" gorm:"username;unique;not null"`
     Email       string      `json:"email" gorm:"email;not null"`
     Password    string      `json:"password" gorm:"column:password_hash;not null"`
     CreatedAt   time.Time   `gorm:"created_at"`
