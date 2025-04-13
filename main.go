@@ -150,7 +150,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
     json.NewDecoder(r.Body).Decode(&user)
 
     // get the password from the database for the email provided
-    if err := DB.Where("email = ?", user.Email).First(&dbUser); err != nil {
+    if err := DB.Where("email = ?", user.Email).First(&dbUser); err.Error != nil {
         http.Error(w, "Error: Email not found", http.StatusUnauthorized)
         return
     }
