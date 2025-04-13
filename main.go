@@ -111,7 +111,11 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
     DB.Create(&user)
 
     // send info to the user saying the new user was created
-    fmt.Fprintf(w, "User created!\n %v\n", user)
+    w.Header().Set("Content-Type","application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+	    "message": "User created!",
+	    "User": user,
+    })
 }
 
 func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
