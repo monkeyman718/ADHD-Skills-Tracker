@@ -64,7 +64,19 @@ func main() {
 
 
     fmt.Println("Listening on port 8080...")
-    http.ListenAndServe(":"+port, router)
+    http.ListenAndServe(":"+port, enableCORS(router))
+}
+
+func enableCORS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Or restrict to your frontend's URL
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == "OPTIONS" {
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }
 
 func ConnectDB() {
