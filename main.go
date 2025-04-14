@@ -161,7 +161,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    tokenStr, err := CreateJWT(w,dbUser.Email)
+    tokenStr, err := CreateJWT(dbUser.Email)
     if err != nil {
         http.Error(w, "Error creating jwt token", http.StatusInternalServerError)
         return
