@@ -212,7 +212,7 @@ func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(map[string]string{"message": "New skill created!"})
 }
 
-func CreateJWT(w http.ResponseWriter, email string) (string, error) {
+func CreateJWT(email string) (string, error) {
     jwtKey := []byte(os.Getenv("JWT_SECRET"))
 
     claims := jwt.MapClaims{
@@ -221,11 +221,5 @@ func CreateJWT(w http.ResponseWriter, email string) (string, error) {
     }
 
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    tokenString, err := token.SignedString(jwtKey)
-    if err != nil {
-        http.Error(w, "Error: Creating token string", http.StatusNotFound)
-        return "", err
-    }
-
-    return tokenString, nil
+    return token.SignedString(jwtKey)
 }
