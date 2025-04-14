@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	//"github.com/joho/godotenv"
+	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
@@ -160,7 +161,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    json.NewEncoder(w).Encode(map[string]string{"message": "Login successful!"})
+    tokenStr, err := CreateJWT(w,dbUser.Email)
+    if err != nil {
+        http.Error(w, "Error creating jwt token", http.StatusInternalServerError)
+        return
+    }
+
+    json.NewEncoder(w).Encode(map[string]string{
+        "message": "LOGIN SUCCESSFUL",
+        "jwt": tokenStr,
+    })
 }
 
 func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
@@ -200,4 +210,22 @@ func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
 
     w.Header().Set("Content-Type","application/json")
     json.NewEncoder(w).Encode(map[string]string{"message": "New skill created!"})
+}
+
+func CreateJWT(w http.ResponseWriter, email string) (string, error) {
+    jwtKey := []byte(os.Getenv("JWT_SECRET"))
+
+    claims := jwt.MapClaims{
+        "email": email,
+        "exp": time.Now().Add(24 * time.Hour).Unix(),
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    tokenString, err := token.SignedString(jwtKey)
+    if err != nil {
+        http.Error(w, "Error: Creating token string", http.StatusNotFound)
+        return "", err
+    }
+
+    return tokenString, nil
 }
