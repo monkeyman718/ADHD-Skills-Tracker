@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
+
 	//"log"
 	"net/http"
 	"os"
@@ -10,9 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 
-	//"github.com/joho/godotenv"
 	"github.com/golang-jwt/jwt/v5"
-	_ "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -42,11 +44,11 @@ type Skill struct {
 var DB *gorm.DB
 var err error
 
-/*func init() {
+func init() {
     if err := godotenv.Load(); err != nil {
         log.Println("No .env file found")
     }
-}*/
+}
 
 func main() {
     ConnectDB()
@@ -64,6 +66,7 @@ func main() {
         port = "8080" // fallback for local dev
     }
 
+    fmt.Println("Listening on port " + port + " ...")
     http.ListenAndServe(":"+port, enableCORS(router))
 }
 
@@ -174,6 +177,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
+    skill := Skill{} 
+
     validPriorities := map[string]bool{
         "High": true,
         "Medium": true,
@@ -186,12 +191,30 @@ func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
         "Completed":   true,
     }
 
-    skill := Skill{}
-    
-
     json.NewDecoder(r.Body).Decode(&skill)
+
+    ctx := r.Context()
+    userEmail := ctx.Value("email")
+    if userEmail == nil {
+        http.Error(w, "Error: Email not provided", http.StatusUnauthorized)
+        return
+    }
+
+    email, OK := userEmail.(string)
+    if !OK {
+        http.Error(w, "Error: Invalid email", http.StatusNotFound)
+        return
+    }
+
+    user := User{}
+    if err := DB.Table("users").Where("email = ?", email).First(&user).Error; err != nil {
+        http.Error(w, "Error: ", http.StatusNotFound)
+        return
+    }
+
     skill.ID = uuid.New()
-    
+    skill.UserID = user.ID
+
     if !validPriorities[skill.Priority] {
         http.Error(w, "Error: Invalid priority", http.StatusBadRequest)
         return
@@ -209,7 +232,7 @@ func CreateSkillHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     w.Header().Set("Content-Type","application/json")
-    json.NewEncoder(w).Encode(map[string]string{"message": "New skill created!"})
+    json.NewEncoder(w).Encode(map[string]string{"message": "New skill created!, for User ID: " + user.ID.String()})
 }
 
 func CreateJWT(email string) (string, error) {
