@@ -1,6 +1,7 @@
 package main
 
 import (
+    "context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -57,8 +58,9 @@ func main() {
     router.HandleFunc("/users", CreateUserHandler).Methods("POST")
     router.HandleFunc("/users", GetUsersHandler).Methods("GET")
     router.HandleFunc("/users/{email}", GetUserByIdHandler).Methods("GET")
-    router.HandleFunc("/skills", CreateSkillHandler).Methods("POST")
     router.HandleFunc("/login", LoginHandler).Methods("POST")
+    router.Handle("/skills", JWTAuthMiddleware(http.HandlerFunc(CreateSkillHandler))).Methods("POST")
+    
 
     port := os.Getenv("PORT")
     
@@ -68,6 +70,50 @@ func main() {
 
     fmt.Println("Listening on port " + port + " ...")
     http.ListenAndServe(":"+port, enableCORS(router))
+}
+
+func JWTAuthMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // get Authorization from request
+        authHeader := r.Header.Get("Authorization")
+
+        // if Authorization is empty return error
+        if authHeader == "" {
+            http.Error(w, "Error: Authorization not found", http.StatusNotFound)
+            return
+        }
+
+        // Get the Bearer token
+        tokenStr := ""
+        fmt.Sscanf(authHeader, "Bearer %s", &tokenStr)
+
+        // Create a jwt token
+        jwtKey := []byte(os.Getenv("JWT_SECRET"))
+
+        claims := jwt.MapClaims{}
+        token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+            return jwtKey, nil
+        })
+
+        // check that jwt token was created with no errors and is valid
+        if err != nil || !token.Valid {
+            http.Error(w, "Invalid token", http.StatusUnauthorized)
+            return
+        }
+
+        // Extract email and add it to context
+        email, ok := claims["email"].(string)
+        if !ok {
+            http.Error(w, "Error: Invalid email in token", http.StatusUnauthorized)
+            return
+        }
+
+        // Create a context with the email value
+        ctx := context.WithValue(r.Context(), "email", email)
+
+        // run the ServeHTTP() with the context as the request
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
 }
 
 func enableCORS(h http.Handler) http.Handler {
