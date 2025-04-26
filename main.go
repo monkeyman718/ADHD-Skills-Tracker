@@ -1,7 +1,7 @@
 package main
 
 import (
-    "context"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,7 +23,7 @@ import (
 )
 
 type User struct{
-    ID          uuid.UUID   `gorm:"type:uuid;primary key"`
+    ID          uuid.UUID   `gorm:"type:uuid;primaryKey"`
     Username    string      `json:"username" gorm:"username;unique;not null"`
     Email       string      `json:"email" gorm:"email;not null"`
     Password    string      `json:"password" gorm:"column:password_hash;not null"`
@@ -60,6 +60,7 @@ func main() {
     router.HandleFunc("/users/{email}", GetUserByIdHandler).Methods("GET")
     router.HandleFunc("/login", LoginHandler).Methods("POST")
     router.Handle("/skills", JWTAuthMiddleware(http.HandlerFunc(CreateSkillHandler))).Methods("POST")
+    router.Handle("/skills", JWTAuthMiddleware(http.HandlerFunc(GetSkillsHandler))).Methods("GET")
     
 
     port := os.Getenv("PORT")
@@ -114,6 +115,44 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
         // run the ServeHTTP() with the context as the request
         next.ServeHTTP(w, r.WithContext(ctx))
     })
+}
+
+func GetSkillsHandler(w http.ResponseWriter, r *http.Request) {
+
+    // get the email address from the request body
+    // check the token 
+    ctx := r.Context()
+    userEmail := ctx.Value("email")
+    if userEmail != nil {
+        http.Error(w, "Error: email address not found", http.StatusUnauthorized)
+        return
+    }
+
+    email, OK := userEmail.(string)
+    if !OK {
+        http.Error(w, "Error: email not found", http.StatusUnauthorized)
+        return
+    }
+
+    user := User{}
+    skill := Skill{}
+
+    if err := DB.Table("users").Where("email = ?", email).First(&user).Error; err != nil {
+        http.Error(w, "Error: UserID not found", http.StatusNotFound)
+        return
+    }
+
+    skill.UserID = user.ID
+
+    skills := []Skill{}
+
+    if err = DB.Where("user_id = ?", skill.UserID).Find(&skills).Error; err != nil {
+        http.Error(w, "Error: No skills found", http.StatusNotFound)
+        return
+    }
+
+    w.Header().Set("Content-Type","application/json")
+    json.NewEncoder(w).Encode(&skills)
 }
 
 func enableCORS(h http.Handler) http.Handler {
@@ -183,7 +222,7 @@ func GetUserByIdHandler(w http.ResponseWriter, r *http.Request) {
     user := User{}
 
     // search for user info with that id
-    if result := DB.Where("email = ?", email).First(&user); result != nil {
+    if result := DB.Where("email = ?", email).First(&user); result.Error != nil {
         http.Error(w,"Error: User not found", http.StatusNotFound)
         return
     }    
