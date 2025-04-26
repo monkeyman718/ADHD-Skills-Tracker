@@ -32,7 +32,7 @@ type User struct{
 }
 
 type Skill struct {
-    ID          uuid.UUID   `gorm:"type:uuid;primary key"`
+    ID          uuid.UUID   `gorm:"type:uuid;primaryKey"`
     UserID      uuid.UUID   `json:"user_id" gorm:"type:uuid;not null"`
     Name        string      `json:"name" gorm:"not null"`
     Priority    string      `json:"priority" gorm:"priority"`
@@ -123,7 +123,7 @@ func GetSkillsHandler(w http.ResponseWriter, r *http.Request) {
     // check the token 
     ctx := r.Context()
     userEmail := ctx.Value("email")
-    if userEmail != nil {
+    if userEmail == nil {
         http.Error(w, "Error: email address not found", http.StatusUnauthorized)
         return
     }
