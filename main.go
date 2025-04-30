@@ -59,8 +59,7 @@ func main() {
     router.HandleFunc("/login", LoginHandler).Methods("POST")
     router.Handle("/skills", JWTAuthMiddleware(http.HandlerFunc(CreateSkillHandler))).Methods("POST")
     router.Handle("/skills", JWTAuthMiddleware(http.HandlerFunc(GetSkillsHandler))).Methods("GET")
-    router.Handle("/skills/{id}", JWTAuthMiddleware(http.HandlerFunc(DeleteSkillHandler))).Methods("POST")
-    
+    router.Handle("/skills/{id}", JWTAuthMiddleware(http.HandlerFunc(DeleteSkillHandler))).Methods("DELETE")    
 
     port := os.Getenv("PORT")
     
