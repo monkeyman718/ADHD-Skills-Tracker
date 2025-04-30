@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-
-	//"log"
 	"net/http"
 	"os"
 	"time"
@@ -61,6 +59,7 @@ func main() {
     router.HandleFunc("/login", LoginHandler).Methods("POST")
     router.Handle("/skills", JWTAuthMiddleware(http.HandlerFunc(CreateSkillHandler))).Methods("POST")
     router.Handle("/skills", JWTAuthMiddleware(http.HandlerFunc(GetSkillsHandler))).Methods("GET")
+    router.Handle("/skills/{id}", JWTAuthMiddleware(http.HandlerFunc(DeleteSkillHandler))).Methods("POST")
     
 
     port := os.Getenv("PORT")
@@ -71,6 +70,48 @@ func main() {
 
     fmt.Println("Listening on port " + port + " ...")
     http.ListenAndServe(":"+port, enableCORS(router))
+}
+
+func DeleteSkillHandler(w http.ResponseWriter, r *http.Request) {
+    user := User{}
+    skill := Skill{}
+
+    // Get the userID from the request
+    ctx := r.Context()
+    userEmail := ctx.Value("email")
+    if userEmail == nil {
+        http.Error(w, "Error: email address not found", http.StatusUnauthorized)
+        return
+    }
+
+    email, OK := userEmail.(string)
+    if !OK {
+        http.Error(w, "Error: email not found", http.StatusUnauthorized)
+        return
+    }
+
+    user := User{}
+    skill := Skill{}
+
+    if err := DB.Table("users").Where("email = ?", email).First(&user).Error; err != nil {
+        http.Error(w, "Error: UserID not found", http.StatusNotFound)
+        return
+    }
+
+    skill.UserID = user.ID
+    
+    json.NewDecoder(r.Body).Decode(&skill)
+    if err = DB.Delete(&skill).Error; err != nil {
+        http.Error(w, "Erorr: Skill not found", http.StatusNotFound)
+        return
+    }
+
+    w.Header().Set("Content-Type","application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "message": "Skill deleted!",
+        "Skill ID": skill.ID,
+    })
+    // Send deletion verification to caller
 }
 
 func JWTAuthMiddleware(next http.Handler) http.Handler {
