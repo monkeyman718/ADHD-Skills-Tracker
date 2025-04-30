@@ -72,9 +72,6 @@ func main() {
 }
 
 func DeleteSkillHandler(w http.ResponseWriter, r *http.Request) {
-    user := User{}
-    skill := Skill{}
-
     // Get the userID from the request
     ctx := r.Context()
     userEmail := ctx.Value("email")
