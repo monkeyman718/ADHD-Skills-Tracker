@@ -72,6 +72,9 @@ func main() {
 }
 
 func DeleteSkillHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    skillId := vars["id"]
+
     // Get the userID from the request
     ctx := r.Context()
     userEmail := ctx.Value("email")
@@ -95,8 +98,8 @@ func DeleteSkillHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     skill.UserID = user.ID
-    
-    json.NewDecoder(r.Body).Decode(&skill)
+    skill.ID, _ = uuid.Parse(skillId)
+
     if err = DB.Delete(&skill).Error; err != nil {
         http.Error(w, "Erorr: Skill not found", http.StatusNotFound)
         return
